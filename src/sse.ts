@@ -1,4 +1,11 @@
 export interface SSEEvent {
+  // Event type, top level on both majors: v1 `{ id, type, ... }`, v2 `{ id, type, data }`
+  type?: string
+  // v2 event body
+  data?: {
+    type?: string
+  }
+  // v1 event body, when the payload is nested
   payload?: {
     type?: string
   }

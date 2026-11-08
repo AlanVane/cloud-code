@@ -83,6 +83,32 @@ pnpm deploy
 2. 客户端请求必须包含 `Authorization: Basic <credentials>` 头。
 3. 如果认证失败，Server 会返回 `401 Unauthorized` 状态码。
 
+> `OPENCODE_PASSWORD`（见下文）是容器 API 凭据，不是浏览器入口密码。
+
+## 🧩 OpenCode 版本 (v1 / v2)
+
+镜像只安装一个 OpenCode 大版本，由构建参数 `OPENCODE_MAJOR`（`wrangler.jsonc` 中的
+`image_vars`）决定：
+
+| `OPENCODE_MAJOR` | 启动命令         | 事件流          | API 认证                    |
+| ---------------- | ---------------- | --------------- | --------------------------- |
+| `1`（默认）      | `opencode web`   | `/global/event` | 无                          |
+| `2`              | `opencode serve` | `/api/event`    | Basic `opencode:<password>` |
+
+Worker 同时兼容两套 API，切换版本只需改一行配置并重新构建：
+
+```jsonc
+"image_vars": { "OPENCODE_MAJOR": "2" }
+```
+
+OpenCode v2 需要容器已知密码：优先使用 `OPENCODE_PASSWORD`，未设置时回退到
+`SERVER_PASSWORD`。Worker 会把它转发给容器，并用它认证自身的 `/api/*` 请求。
+
+> v2 的数据结构与 v1 不兼容。切换版本时请让 `S3_PREFIX` 指向新的前缀（或使用新的
+> Bucket），不要复用已有的 v1 数据目录。
+
+详细的 v1/v2 差异与验证记录见 [docs/opencode-v2-migration.zh-CN.md](docs/opencode-v2-migration.zh-CN.md)。
+
 ## 💾 数据持久化 (S3/R2)
 
 Cloud Code 容器内置了对 S3 兼容存储（如 Cloudflare R2, AWS S3）的支持，通过 `TigrisFS` 将对象存储挂载为本地文件系统，实现数据的持久化保存。

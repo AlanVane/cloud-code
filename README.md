@@ -83,6 +83,35 @@ Set the following variables in `wrangler.jsonc` or in the Cloudflare Dashboard e
 2. Client requests must include an `Authorization: Basic <credentials>` header.
 3. If authentication fails, the server returns a `401 Unauthorized` status code.
 
+> `OPENCODE_PASSWORD` (see below) is a container API credential, not the browser gate.
+
+## 🧩 OpenCode Version (v1 / v2)
+
+The image installs one OpenCode major, selected by the `OPENCODE_MAJOR` build arg
+(`image_vars` in `wrangler.jsonc`):
+
+| `OPENCODE_MAJOR` | Start command    | Event stream    | API auth                    |
+| ---------------- | ---------------- | --------------- | --------------------------- |
+| `1` (default)    | `opencode web`   | `/global/event` | none                        |
+| `2`              | `opencode serve` | `/api/event`    | Basic `opencode:<password>` |
+
+The Worker speaks both APIs, so switching majors is a one-line change plus a rebuild:
+
+```jsonc
+"image_vars": { "OPENCODE_MAJOR": "2" }
+```
+
+OpenCode v2 requires a known container password: `OPENCODE_PASSWORD` is used when
+set, otherwise it falls back to `SERVER_PASSWORD`. The Worker forwards it to the
+container and authenticates its own `/api/*` requests with it.
+
+> v2 uses a different data schema than v1. When switching majors, point `S3_PREFIX`
+> at a fresh prefix (or use a new bucket); an existing v1 data directory is not
+> safely reusable by v2.
+
+See [docs/opencode-v2-migration.md](docs/opencode-v2-migration.md) for the measured
+v1/v2 differences and validation notes.
+
 ## 💾 Data Persistence (S3/R2)
 
 Cloud Code containers have built-in support for S3-compatible storage (such as Cloudflare R2, AWS S3), using `TigrisFS` to mount object storage as a local filesystem for persistent data storage.
