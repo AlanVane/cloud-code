@@ -10,3 +10,8 @@ insert_final_newline = true
 
 [*.yml]
 indent_style = space
+
+# pnpm rewrites package.json on install and follows this file; keep it aligned
+# with oxfmt (useTabs: false) so installs do not dirty the tree.
+[package.json]
+indent_style = space
