@@ -11,20 +11,20 @@ Leverages Cloudflare edge infrastructure to run and manage containerized workloa
 
 ### 2.1 Core Commands
 
-| Command           | Description                        | Notes                                          |
-| ----------------- | ---------------------------------- | ---------------------------------------------- |
-| `pnpm dev`        | Start local development server     | Equivalent to `wrangler dev`                   |
-| `pnpm start`      | Alias for `pnpm dev`               | -                                              |
-| `pnpm deploy`     | Deploy to Cloudflare               | Equivalent to `wrangler deploy`                |
-| `pnpm cf-typegen` | Generate Cloudflare Bindings types | Must run after modifying `wrangler.jsonc`      |
+| Command           | Description                        | Notes                                     |
+| ----------------- | ---------------------------------- | ----------------------------------------- |
+| `pnpm dev`        | Start local development server     | Equivalent to `wrangler dev`              |
+| `pnpm start`      | Alias for `pnpm dev`               | -                                         |
+| `pnpm deploy`     | Deploy to Cloudflare               | Equivalent to `wrangler deploy`           |
+| `pnpm cf-typegen` | Generate Cloudflare Bindings types | Must run after modifying `wrangler.jsonc` |
 
 ### 2.2 Code Quality Commands
 
-| Command          | Description                 | Notes                            |
-| ---------------- | --------------------------- | -------------------------------- |
-| `pnpm lint`      | Run oxlint to check code    | High-performance Rust linter     |
-| `pnpm lint:fix`  | Auto-fix lint issues        | Equivalent to `oxlint --fix`     |
-| `pnpm fmt`       | Format code                 | Uses oxfmt (Biome fork)          |
+| Command          | Description                 | Notes                             |
+| ---------------- | --------------------------- | --------------------------------- |
+| `pnpm lint`      | Run oxlint to check code    | High-performance Rust linter      |
+| `pnpm lint:fix`  | Auto-fix lint issues        | Equivalent to `oxlint --fix`      |
+| `pnpm fmt`       | Format code                 | Uses oxfmt (Biome fork)           |
 | `pnpm fmt:check` | Check formatting compliance | Used in CI, does not modify files |
 
 ### 2.3 About Testing
@@ -49,15 +49,15 @@ Leverages Cloudflare edge infrastructure to run and manage containerized workloa
 
 ### 3.2 Naming Conventions
 
-| Type                | Convention           | Examples                              |
-| ------------------- | -------------------- | ------------------------------------- |
-| Files               | `camelCase`          | `container.ts`, `sse.ts`              |
-| Classes             | `PascalCase`         | `AgentContainer`                      |
-| Interface/Type      | `PascalCase`         | `SSEEvent`, `SSEEventHandler`         |
-| Variables/Functions | `camelCase`          | `verifyBasicAuth`, `processSSEStream` |
-| Constants           | `UPPER_CASE`         | `PORT`, `SINGLETON_CONTAINER_ID`      |
-| Private Properties  | `_camelCase`         | `_watchPromise` (optional prefix)     |
-| Boolean Variables   | `is/has/should` prefix | `isAuthorized`, `hasError`          |
+| Type                | Convention             | Examples                              |
+| ------------------- | ---------------------- | ------------------------------------- |
+| Files               | `camelCase`            | `container.ts`, `sse.ts`              |
+| Classes             | `PascalCase`           | `AgentContainer`                      |
+| Interface/Type      | `PascalCase`           | `SSEEvent`, `SSEEventHandler`         |
+| Variables/Functions | `camelCase`            | `verifyBasicAuth`, `processSSEStream` |
+| Constants           | `UPPER_CASE`           | `PORT`, `SINGLETON_CONTAINER_ID`      |
+| Private Properties  | `_camelCase`           | `_watchPromise` (optional prefix)     |
+| Boolean Variables   | `is/has/should` prefix | `isAuthorized`, `hasError`            |
 
 ### 3.3 TypeScript Best Practices
 
@@ -148,12 +148,12 @@ When modifying this codebase as an AI Agent, strictly follow these rules:
 
 ## 6. Toolchain
 
-| Tool         | Description                                   |
-| ------------ | --------------------------------------------- |
+| Tool         | Description                                        |
+| ------------ | -------------------------------------------------- |
 | **Wrangler** | Core CLI tool for deployment, dev, type generation |
-| **oxlint**   | High-performance Rust linter, replaces ESLint |
-| **oxfmt**    | Biome fork formatter, replaces Prettier       |
-| **pnpm**     | Package manager (v10.28.1)                    |
+| **oxlint**   | High-performance Rust linter, replaces ESLint      |
+| **oxfmt**    | Biome fork formatter, replaces Prettier            |
+| **pnpm**     | Package manager (v10.28.1)                         |
 
 ### Verification Workflow (After Code Modifications)
 
