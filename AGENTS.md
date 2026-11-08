@@ -153,7 +153,7 @@ When modifying this codebase as an AI Agent, strictly follow these rules:
 | **Wrangler** | Core CLI tool for deployment, dev, type generation |
 | **oxlint**   | High-performance Rust linter, replaces ESLint      |
 | **oxfmt**    | Biome fork formatter, replaces Prettier            |
-| **pnpm**     | Package manager (v10.28.1)                         |
+| **pnpm**     | Package manager (v12.18.0)                         |
 
 ### Verification Workflow (After Code Modifications)
 
