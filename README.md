@@ -72,10 +72,10 @@ To protect your Agent from unauthorized access, this project supports standard H
 
 Set the following variables in `wrangler.jsonc` or in the Cloudflare Dashboard environment variables:
 
-| Variable Name     | Description                                           | Default |
-| ----------------- | ----------------------------------------------------- | ------- |
+| Variable Name     | Description                                                  | Default |
+| ----------------- | ------------------------------------------------------------ | ------- |
 | `SERVER_PASSWORD` | Access password. If not set, authentication is **disabled**. | (empty) |
-| `SERVER_USERNAME` | Access username.                                      | (empty) |
+| `SERVER_USERNAME` | Access username.                                             | (empty) |
 
 ### Verification Logic
 
@@ -120,16 +120,16 @@ Cloud Code containers have built-in support for S3-compatible storage (such as C
 
 To enable data persistence, configure the following environment variables in the container runtime:
 
-| Variable Name          | Description                                  | Required | Default  |
-| ---------------------- | -------------------------------------------- | -------- | -------- |
-| `S3_ENDPOINT`          | S3 API endpoint address                      | ✅ Yes   | -        |
-| `S3_BUCKET`            | Bucket name                                  | ✅ Yes   | -        |
-| `S3_ACCESS_KEY_ID`     | Access key ID                                | ✅ Yes   | -        |
-| `S3_SECRET_ACCESS_KEY` | Access key secret                            | ✅ Yes   | -        |
-| `S3_REGION`            | Storage region                               | ❌ No    | `auto`   |
-| `S3_PATH_STYLE`        | Whether to use Path Style access             | ❌ No    | `false`  |
-| `S3_PREFIX`            | Path prefix (subdirectory) within the bucket | ❌ No    | (root)   |
-| `TIGRISFS_ARGS`        | Additional mount arguments for TigrisFS      | ❌ No    | -        |
+| Variable Name          | Description                                  | Required | Default |
+| ---------------------- | -------------------------------------------- | -------- | ------- |
+| `S3_ENDPOINT`          | S3 API endpoint address                      | ✅ Yes   | -       |
+| `S3_BUCKET`            | Bucket name                                  | ✅ Yes   | -       |
+| `S3_ACCESS_KEY_ID`     | Access key ID                                | ✅ Yes   | -       |
+| `S3_SECRET_ACCESS_KEY` | Access key secret                            | ✅ Yes   | -       |
+| `S3_REGION`            | Storage region                               | ❌ No    | `auto`  |
+| `S3_PATH_STYLE`        | Whether to use Path Style access             | ❌ No    | `false` |
+| `S3_PREFIX`            | Path prefix (subdirectory) within the bucket | ❌ No    | (root)  |
+| `TIGRISFS_ARGS`        | Additional mount arguments for TigrisFS      | ❌ No    | -       |
 
 ### How It Works
 
