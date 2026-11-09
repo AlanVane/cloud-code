@@ -23,6 +23,10 @@
       "name": "cloud-code-container",
       "class_name": "AgentContainer",
       "image": "./Dockerfile",
+      // OpenCode major baked into the image: "1" (`opencode web`) or "2" (`opencode serve`)
+      "image_vars": {
+        "OPENCODE_MAJOR": "2",
+      },
       "instance_type": {
         "vcpu": 1,
         "memory_mib": 4096,

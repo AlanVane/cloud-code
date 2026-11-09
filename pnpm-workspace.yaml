@@ -1,4 +1,6 @@
-onlyBuiltDependencies:
-  - esbuild
-  - sharp
-  - workerd
+allowBuilds:
+  # esbuild and workerd ship native binaries installed by postinstall scripts.
+  esbuild: true
+  workerd: true
+  # sharp has no install script; keep it explicit so a future bump cannot run one silently.
+  sharp: false
