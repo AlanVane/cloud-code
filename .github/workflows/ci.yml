@@ -1,0 +1,81 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    name: Types, lint and format
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+
+      # Reads packageManager from package.json (pnpm@12.18.0).
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm exec tsc --noEmit
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Format
+        run: pnpm fmt:check
+
+  container:
+    name: Container image and Wrangler config
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      # Built without build-args on purpose: OPENCODE_MAJOR defaults to 1, so
+      # this run also proves the v1 rollback path still builds. Gated to master
+      # so pull requests stay fast; the v2 path runs on every event below.
+      - name: Build image (v1 default)
+        if: github.event_name == 'push'
+        run: docker build -t cloud-code:ci-v1 .
+
+      - name: Assert v1 is installed
+        if: github.event_name == 'push'
+        run: |
+          got=$(docker run --rm --entrypoint opencode cloud-code:ci-v1 --version)
+          echo "opencode version: $got"
+          case "$got" in
+            v1.*) ;;
+            *) echo "::error::expected a v1 release, got '$got'"; exit 1 ;;
+          esac
+
+      # Reads image_vars.OPENCODE_MAJOR from wrangler.jsonc (currently "2"),
+      # builds the image and validates the Wrangler config. Needs no Cloudflare
+      # credentials.
+      - name: Wrangler dry-run deploy
+        run: pnpm exec wrangler deploy --dry-run --outdir /tmp/dry-run
