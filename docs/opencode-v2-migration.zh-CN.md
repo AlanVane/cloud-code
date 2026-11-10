@@ -96,6 +96,8 @@
 5. `pnpm lint` 与 `tsc --noEmit` 通过；修改过的文件均通过 `oxfmt --check`（仅存留仓库
    原有的 `AGENTS.md` 格式差异）。
 
+逐条可复制的本地验证步骤见 [本地端到端验证](local-e2e.zh-CN.md)。
+
 ## 注意事项
 
 - **v2 必须至少设置一个密码变量。** 请配置 `OPENCODE_PASSWORD`（或配置

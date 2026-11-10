@@ -104,6 +104,9 @@ Both installers accept `--version` and `--no-modify-path` and install to
 5. `pnpm lint` and `tsc --noEmit` pass; `pnpm fmt:check` passes on all modified files
    (only the pre-existing `AGENTS.md` formatting diff remains).
 
+For a copy-pasteable walkthrough of steps 2–4 on a local machine, see
+[Local end-to-end check](local-e2e.md).
+
 ## Caveats
 
 - **At least one password variable is required on v2.** Set `OPENCODE_PASSWORD` (or
