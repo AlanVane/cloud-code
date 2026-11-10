@@ -58,19 +58,17 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       # Built without build-args on purpose: OPENCODE_MAJOR defaults to 1, so
-      # this run also proves the v1 rollback path still builds. Gated to master
-      # so pull requests stay fast; the v2 path runs on every event below.
+      # this run also proves the v1 rollback path still builds. Runs on every
+      # event so a broken assertion cannot hide until a push to master.
       - name: Build image (v1 default)
-        if: github.event_name == 'push'
         run: docker build -t cloud-code:ci-v1 .
 
       - name: Assert v1 is installed
-        if: github.event_name == 'push'
         run: |
           got=$(docker run --rm --entrypoint opencode cloud-code:ci-v1 --version)
           echo "opencode version: $got"
-          case "$got" in
-            v1.*) ;;
+          case "${got#v}" in
+            1.*) ;;
             *) echo "::error::expected a v1 release, got '$got'"; exit 1 ;;
           esac
 
