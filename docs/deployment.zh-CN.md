@@ -93,7 +93,7 @@ curl -su "$U" -H 'content-type: application/json' \
 ## 5. 监控
 
 v2 **没有** `/api/health`。把健康检查改到 `/api/info` 并带上 Basic Auth 头，或者把
-Worker 放到 Cloudflare Access 后面再检查 `/`。
+Worker 放到 [Cloudflare Access](cloudflare-access.zh-CN.md) 后面再检查 `/`。
 
 ## 6. 回滚到 v1
 

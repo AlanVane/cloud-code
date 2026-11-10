@@ -94,6 +94,12 @@ Set the following variables in `wrangler.jsonc` or in the Cloudflare Dashboard e
 2. Client requests must include an `Authorization: Basic <credentials>` header.
 3. If authentication fails, the server returns a `401 Unauthorized` status code.
 
+> **Production:** Basic Auth renders the browser's native credentials dialog, cannot
+> be logged out of, and cannot be revoked per user. For deployed Workers, prefer
+> [Cloudflare Access](docs/cloudflare-access.md), which authenticates visitors at the
+> edge before the Worker runs. Keep Basic Auth in `.dev.vars` for local `pnpm dev`,
+> where Access does not apply — and do not enable both in production.
+
 > `OPENCODE_PASSWORD` (see below) is a container API credential, not the browser gate.
 
 ## 🧩 OpenCode Version (v1 / v2)
