@@ -57,6 +57,9 @@ pnpm cf-typegen
 pnpm deploy
 ```
 
+首次部署前需要准备哪些 secrets、v2 的冒烟测试、监控改动与回滚步骤，见
+[docs/deployment.zh-CN.md](docs/deployment.zh-CN.md)。
+
 ## 📂 项目结构
 
 ```

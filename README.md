@@ -58,6 +58,9 @@ Deploy your code to Cloudflare's global network:
 pnpm deploy
 ```
 
+See [docs/deployment.md](docs/deployment.md) for the secrets that must exist
+before the first deploy, the v2 smoke test, monitoring changes and rollback.
+
 ## 📂 Project Structure
 
 ```
