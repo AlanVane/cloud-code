@@ -25,9 +25,15 @@ loaded is required. See [Troubleshooting](#troubleshooting).
 
 ## 0. Prepare `.dev.vars`
 
-The container exits when S3 is partially configured and a bogus endpoint is
-unreachable, and proxy variables pointing at `127.0.0.1` do not resolve inside
-the container. Keep only these keys for the test:
+If the file does not exist yet, start from the committed template:
+
+```bash
+cp .dev.vars.example .dev.vars
+```
+
+Then keep only these keys for the test, because the container exits when S3 is
+partially configured and a bogus endpoint is unreachable, and proxy variables
+pointing at `127.0.0.1` do not resolve inside the container:
 
 ```
 SERVER_USERNAME=agili

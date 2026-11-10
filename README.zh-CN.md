@@ -24,6 +24,13 @@ pnpm install
 
 ### 本地开发
 
+先创建本地变量文件。`.dev.vars` 已被 gitignore；模板里说明了哪些键必须保留
+（否则 `pnpm cf-typegen` 生成的类型会缺）：
+
+```bash
+cp .dev.vars.example .dev.vars
+```
+
 启动本地开发服务器：
 
 ```bash
