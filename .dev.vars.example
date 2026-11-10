@@ -1,0 +1,27 @@
+# Local development variables for `wrangler dev`.
+#
+#   cp .dev.vars.example .dev.vars     # .dev.vars is gitignored
+#
+# `pnpm cf-typegen` derives the `Env` interface in worker-configuration.d.ts
+# from the *uncommented* keys in .dev.vars. Keep a key commented out and it
+# disappears from the generated types, so `src/index.ts` loses `env.SERVER_*`
+# and stops type-checking.
+
+# Worker gate (HTTP Basic Auth). Authentication is disabled when
+# SERVER_PASSWORD is empty, which is only appropriate for throwaway runs.
+SERVER_USERNAME=admin
+SERVER_PASSWORD=change-me
+
+# OpenCode v2 container API password. Falls back to SERVER_PASSWORD when unset.
+# With both empty, `opencode serve` generates an ephemeral password the Worker
+# can never learn, and every /api/* call fails.
+OPENCODE_PASSWORD=
+
+# S3 / R2 persistence. Kept commented out for local runs: the container exits
+# when a partially configured S3 endpoint is unreachable, and placeholder
+# values never reach a real bucket. Uncomment and fill in to test persistence.
+# S3_ENDPOINT=https://<account-id>.r2.cloudflarestorage.com
+# S3_ACCESS_KEY_ID=<access-key-id>
+# S3_SECRET_ACCESS_KEY=<secret-access-key>
+# S3_BUCKET=<bucket-name>
+# S3_PREFIX=cloud-code

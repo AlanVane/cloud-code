@@ -24,6 +24,14 @@ pnpm install
 
 ### Local Development
 
+Create a local variables file first. `.dev.vars` is gitignored; the template
+documents which keys matter and which must stay uncommented for
+`pnpm cf-typegen`:
+
+```bash
+cp .dev.vars.example .dev.vars
+```
+
 Start the local development server:
 
 ```bash
