@@ -38,6 +38,10 @@ done
 
 `wrangler.jsonc` 里 `keep_vars: true`，Dashboard 上的变量不会因部署而丢失。
 
+`pnpm secrets:sync` 从 `.dev.vars` 读取 `OPENCODE_API_KEY`，用 `wrangler secret bulk`
+上传。它只读这一个键，`HTTP_PROXY` 之类的本地值不会离开本机。`pnpm deploy:sync` 会在
+`pnpm deploy` 之前先执行它；首次部署时 Worker 还不存在，所以请在首次部署完成后再跑一次。
+
 ## 2. 选择 OpenCode 大版本
 
 ```jsonc
