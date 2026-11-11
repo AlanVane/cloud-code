@@ -13,7 +13,13 @@ ARG OPENCODE_VERSION_V2=2.2.5
 
 # Install system dependencies + tigrisfs/cloudflared/opencode, then clean cache
 RUN set -eux; \
-    apt-get update; \
+    # Debian defaults to http:// mirrors. Networks that only allow egress on
+    # 443 fail that first update, so retry once over https:// instead of
+    # forcing one scheme for every host.
+    if ! apt-get update; then \
+      sed -i 's|URIs: http://|URIs: https://|' /etc/apt/sources.list.d/debian.sources; \
+      apt-get update; \
+    fi; \
     apt-get install -y --no-install-recommends \
       fuse \
       ca-certificates \
