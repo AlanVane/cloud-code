@@ -103,7 +103,8 @@ curl -su "$U" -H 'content-type: application/json' \
 ## 5. Monitoring
 
 v2 has **no** `/api/health`. Point health checks at `/api/info` and send the
-Basic Auth header, or put the Worker behind Cloudflare Access and check `/`.
+Basic Auth header, or put the Worker behind
+[Cloudflare Access](cloudflare-access.md) and check `/`.
 
 ## 6. Rollback to v1
 

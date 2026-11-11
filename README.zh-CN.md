@@ -93,6 +93,11 @@ pnpm deploy
 2. 客户端请求必须包含 `Authorization: Basic <credentials>` 头。
 3. 如果认证失败，Server 会返回 `401 Unauthorized` 状态码。
 
+> **生产环境**：Basic Auth 使用浏览器原生凭据弹窗，无法登出，也无法按用户撤销。
+> 部署到 Cloudflare 时建议改用 [Cloudflare Access](docs/cloudflare-access.zh-CN.md)，
+> 在边缘、Worker 执行之前完成认证。本地 `pnpm dev` 不受 Access 保护，可继续在
+> `.dev.vars` 中保留 Basic Auth；生产环境不要同时开启两者。
+
 > `OPENCODE_PASSWORD`（见下文）是容器 API 凭据，不是浏览器入口密码。
 
 ## 🧩 OpenCode 版本 (v1 / v2)
