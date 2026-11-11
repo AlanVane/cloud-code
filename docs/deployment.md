@@ -39,6 +39,12 @@ container itself and breaks both the image build and OpenCode's outbound calls.
 
 `wrangler.jsonc` sets `keep_vars: true`, so dashboard variables survive deploys.
 
+`pnpm secrets:sync` reads `OPENCODE_API_KEY` from `.dev.vars` and uploads it with
+`wrangler secret bulk`. It only ever reads that one key, so local-only values
+such as `HTTP_PROXY` never leave the machine. `pnpm deploy:sync` runs it before
+`pnpm deploy`; the very first deploy has no Worker yet, so run it once after
+that deploy instead.
+
 ## 2. Choose the OpenCode major
 
 ```jsonc

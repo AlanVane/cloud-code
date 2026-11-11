@@ -4,6 +4,8 @@
   "private": true,
   "scripts": {
     "deploy": "wrangler deploy",
+    "deploy:sync": "pnpm secrets:sync && pnpm deploy",
+    "secrets:sync": "node scripts/sync-dev-secrets.mjs",
     "dev": "wrangler dev",
     "start": "wrangler dev",
     "cf-typegen": "wrangler types",
