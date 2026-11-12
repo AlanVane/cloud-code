@@ -65,6 +65,34 @@ pnpm deploy
 The first deploy is the slow one: Cloudflare builds the image from `Dockerfile`,
 which installs `apt` packages plus the pinned OpenCode release.
 
+### Deploy from Workers Builds
+
+The image build needs npm registry access. When the machine running
+`pnpm deploy` sits behind a slow mirror or proxy, let
+[Workers Builds](https://developers.cloudflare.com/workers/ci-cd/builds/) run the
+build instead: for a `Dockerfile` image, Cloudflare builds it in the Workers
+Builds environment and publishes it, so nothing is built locally.
+
+1. Dashboard → **Workers & Pages** → the `cloud-code` Worker → **Settings** →
+   **Builds**, and connect this repository.
+2. Set **Deploy command** to `npx wrangler deploy`. Do not use
+   `pnpm deploy:sync`: that script uploads secrets from `.dev.vars`, which is not
+   present in the build environment. Secrets are per-Worker and already exist
+   there, so a deploy does not need to touch them.
+3. Keep the **root directory** at the repository root, so `wrangler.jsonc` and
+   `Dockerfile` are both visible.
+4. Set the production branch to `master` and push.
+
+Two limits worth knowing:
+
+| Limit                                                           | Consequence                                                                             |
+| --------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| Non-production branch builds run `wrangler versions upload`     | Worker code is uploaded, but **no image is published and no container rollout happens** |
+| Version URLs are not generated for Workers with Durable Objects | Container Workers included, so there is no preview URL per branch                       |
+
+Use a separate staging Worker or a Wrangler environment if you need a
+shareable preview with its own image.
+
 Current resource shape, from `wrangler.jsonc`:
 
 | Setting               | Value                                      |

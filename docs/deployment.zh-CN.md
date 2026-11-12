@@ -59,6 +59,29 @@ pnpm deploy
 
 首次部署最慢：Cloudflare 会按 `Dockerfile` 构建镜像（apt 依赖 + 固定版本的 OpenCode）。
 
+### 用 Workers Builds 部署
+
+镜像构建需要访问 npm registry。如果执行 `pnpm deploy` 的机器被慢镜像源或代理拖住，可以交给
+[Workers Builds](https://developers.cloudflare.com/workers/ci-cd/builds/)：对 `Dockerfile`
+形式的镜像，Cloudflare 会在 Workers Builds 环境里完成构建并发布，本地不需要构建任何东西。
+
+1. Dashboard → **Workers & Pages** → `cloud-code` Worker → **Settings** → **Builds**，
+   连接本仓库。
+2. **Deploy command** 设为 `npx wrangler deploy`。不要用 `pnpm deploy:sync`：那个脚本会从
+   `.dev.vars` 上传 secrets，而构建环境里没有这个文件。secrets 归属 Worker、已经存在，
+   部署时不需要重新写入。
+3. **Root directory** 保持仓库根目录，确保 `wrangler.jsonc` 与 `Dockerfile` 都可见。
+4. 生产分支设为 `master`，然后推送。
+
+两个需要知道的限制：
+
+| 限制                                           | 后果                                               |
+| ---------------------------------------------- | -------------------------------------------------- |
+| 非生产分支默认执行 `wrangler versions upload`  | 只上传 Worker 代码，**不发布镜像、不滚动容器实例** |
+| 带 Durable Object 的 Worker 不生成 Version URL | 容器 Worker 属于这一类，因此每个分支没有预览 URL   |
+
+如果确实需要"带独立镜像的可分享预览"，用一个独立的 staging Worker 或 Wrangler 环境。
+
 当前资源配置（来自 `wrangler.jsonc`）：
 
 | 项目             | 值                                         |
