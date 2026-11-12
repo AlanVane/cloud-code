@@ -136,7 +136,11 @@ if (fs.existsSync(file)) {
 }
 
 const plugins = Array.isArray(config.plugins) ? config.plugins : []
-if (plugins.includes(entry)) process.exit(0)
+// `-name` is OpenCode's disable prefix; leave such a config alone.
+const disabled = plugins.some(
+    (plugin) => typeof plugin === 'string' && plugin.startsWith('-') && plugin.includes('oh-my-opencode-slim'),
+)
+if (plugins.includes(entry) || disabled) process.exit(0)
 
 plugins.push(entry)
 config.plugins = plugins

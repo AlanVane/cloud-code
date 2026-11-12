@@ -75,14 +75,92 @@ OpenCode 2.2.5 + 插件 3.0.7 上验证：项目文件把 `orchestrator` 设为 
 
 ## 升级或移除
 
-| 目标     | 做法                                                                                 |
-| -------- | ------------------------------------------------------------------------------------ |
-| 升级插件 | 改 `docker/opencode-plugins/package.json`，重新生成 `package-lock.json`，重新构建    |
-| 去掉插件 | 把 `image_vars.OPENCODE_MAJOR` 改成 `"1"`，或删除那段 `RUN` 与 entrypoint 的两个调用 |
-| 换预设   | 编辑 `oh-my-opencode-slim.json`（镜像默认值或 S3 上的副本）                          |
+| 目标         | 做法                                                                                 |
+| ------------ | ------------------------------------------------------------------------------------ |
+| 升级插件     | 改 `docker/opencode-plugins/package.json`，重新生成 `package-lock.json`，重新构建    |
+| 去掉插件     | 把 `image_vars.OPENCODE_MAJOR` 改成 `"1"`，或删除那段 `RUN` 与 entrypoint 的两个调用 |
+| 换预设       | 编辑 `oh-my-opencode-slim.json`（镜像默认值或 S3 上的副本）                          |
+| 不重建即禁用 | 在 `plugins` 数组里写 `"-oh-my-opencode-slim"` 并重新加载                            |
 
 只手工删掉 `opencode.json` 里的插件路径是不够的：只要压缩包还在，下次启动 `register_plugin`
-会重新加回去。
+会重新加回去。带 `-` 前缀的条目则会被尊重——`register_plugin` 看到它就保持数组不动。
+
+## 模型预设
+
+内置文件里有两套预设，`preset` 决定用哪一套。
+
+| 预设                  | orchestrator                  | oracle                      | explorer                          | designer                     | fixer                       | observer                      |
+| --------------------- | ----------------------------- | --------------------------- | --------------------------------- | ---------------------------- | --------------------------- | ----------------------------- |
+| `opencode-go`（默认） | `opencode/gpt-6.1-sol` (high) | `opencode-go/glm-5.3`       | `opencode-go/deepseek-v4.1-flash` | `opencode/gemini-3.8-flash`  | `opencode-go/mimo-v2.6-pro` | `opencode-go/mimo-v2.6-flash` |
+| `openai`              | `openai/gpt-6-sol` (high)     | `openai/gpt-6-astra` (high) | `openai/gpt-6-luna` (low)         | `openai/gpt-6-luna` (medium) | `openai/gpt-6-luna` (high)  | `openai/gpt-6-luna` (low)     |
+
+不写 `preset` 时所有 agent 都跟随会话模型：能用，但放弃了"强 orchestrator + 便宜 worker"的
+成本结构。
+
+如果要自己换预设，各角色的要求：
+
+| Agent          | 需要                            | 建议档位       |
+| -------------- | ------------------------------- | -------------- |
+| `orchestrator` | 长上下文、稳定的工具调用        | 强，高档       |
+| `oracle`       | 最强推理，只读                  | 最强，高档     |
+| `explorer`     | 快、便宜、只读检索              | 便宜，低档     |
+| `designer`     | **图片输入**（截图）            | 中等，中档     |
+| `fixer`        | 多文件改写                      | 中档，高档     |
+| `observer`     | 多模态，provider 不可用时可禁用 | 便宜的视觉模型 |
+
+### 保存前先确认模型 ID
+
+`model` 不做校验：写错不会降级，而是子会话创建失败。在容器里读模型目录：
+
+```bash
+curl -s -u "opencode:__PW__" http://127.0.0.1:2633/api/model \
+| python3 -c 'import json,sys
+for m in json.load(sys.stdin)["data"]:
+    v = ",".join(x["id"] for x in (m.get("variants") or []))
+    print(m["providerID"] + "/" + m["modelID"] + ("  #" + v if v else ""))'
+```
+
+`__PW__` 是容器 API 密码（`OPENCODE_PASSWORD`，未设置时回退 `SERVER_PASSWORD`）。变体是模型
+特有的：只用 `#` 后打印出来的值；不确定就省略 `variant`，写错的变体会导致模型解析失败。
+
+### 应用与验证
+
+1. 编辑 `/root/s3/.opencode/config/opencode/oh-my-opencode-slim.json`（或项目级
+   `.opencode/oh-my-opencode-slim.jsonc`，后者优先级更高）。
+2. 校验：`python3 -m json.tool <文件> >/dev/null && echo OK`。
+3. 重新加载：`curl -s -X POST -u "opencode:__PW__" http://127.0.0.1:2633/api/location/reload`。
+4. 确认每个 agent 实际解析到的模型：
+
+```bash
+curl -s -u "opencode:__PW__" http://127.0.0.1:2633/api/agent \
+| python3 -c 'import json,sys
+for a in json.load(sys.stdin)["data"]:
+    m = a.get("model") or {}
+    print(a["id"], "->", m.get("providerID","?") + "/" + m.get("id","?"), m.get("variant",""))'
+```
+
+只改文件不会重新注册 agent，而且经 FUSE 的改动可能不触发 watcher，所以在看 `/api/agent`
+之前一定先 reload。
+
+## 回滚
+
+删掉 `preset`（`presets` 可留可删）后 reload：新会话回到跟随会话模型。不需要重启容器或重建镜像。
+
+要整体关掉，把 `image_vars.OPENCODE_MAJOR` 设回 `"1"`（v1 没有压缩包），或者保留 v2、用上面的
+`-` 条目只禁用这个插件。
+
+## 排错
+
+| 现象                                | 原因                                                          | 处理                                                                                               |
+| ----------------------------------- | ------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| `/api/agent` 里没有 `orchestrator`  | 插件没加载                                                    | 看启动日志里有没有 `Registered OpenCode plugin`，以及 `/opt/opencode-plugins.tar.zst` 是否解压成功 |
+| `Cannot find module 'jsdom'`        | 打包时省掉了 optional 依赖                                    | 不要用 `--omit=optional`；默认构建是保留的                                                         |
+| `sg: group 'run' does not exist`    | `ast_grep_*` 退回到 `/usr/bin/sg`                             | 确认包里含 `@ast-grep/cli`（默认构建会带）                                                         |
+| `PresetResolutionError`             | `preset` 名称或 `extends` 目标不存在                          | 对齐名称                                                                                           |
+| `Model unavailable: provider/model` | provider 未连接，或 ID 写错                                   | 重新列模型并核对 ID                                                                                |
+| 报某个 variant 的模型解析错误       | 该模型不提供这个变体                                          | 删掉 `variant`                                                                                     |
+| agent 还是旧模型                    | 会话绑定的是旧快照                                            | 新建会话，或 reload                                                                                |
+| 改了没反应                          | 改错文件（编辑了 `/opt/config-init` 或 `~/.config/opencode`） | 只改 `/root/s3/.opencode/config/opencode/oh-my-opencode-slim.json`                                 |
 
 ## 验证数据
 

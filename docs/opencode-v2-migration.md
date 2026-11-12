@@ -128,3 +128,10 @@ For a copy-pasteable walkthrough of steps 2–4 on a local machine, see
 2. Point `S3_PREFIX` back to a v1 data prefix (or a clean prefix) — do not mount a
    v2-populated directory into v1.
 3. Rebuild and redeploy. No v1 code paths were removed.
+
+## Related docs
+
+- [Protect the Worker with Cloudflare Access](cloudflare-access.md)
+- [OpenCode orchestration plugin in the container](oh-my-opencode-slim.md)
+- [Local end-to-end check](local-e2e.md)
+- [Deploying to Cloudflare](deployment.md)

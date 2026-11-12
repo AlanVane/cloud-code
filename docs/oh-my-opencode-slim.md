@@ -86,14 +86,96 @@ container, and `scripts/sync-dev-secrets.mjs` uploads that key with
 
 ## Changing or removing the plugin
 
-| Goal             | Action                                                                                           |
-| ---------------- | ------------------------------------------------------------------------------------------------ |
-| Bump the plugin  | edit `docker/opencode-plugins/package.json`, regenerate `package-lock.json`, rebuild             |
-| Drop it again    | set `image_vars.OPENCODE_MAJOR` to `"1"`, or remove the `RUN` block and the two entrypoint calls |
-| Different preset | edit `oh-my-opencode-slim.json` (image default or S3 copy)                                       |
+| Goal                | Action                                                                                           |
+| ------------------- | ------------------------------------------------------------------------------------------------ |
+| Bump the plugin     | edit `docker/opencode-plugins/package.json`, regenerate `package-lock.json`, rebuild             |
+| Drop it again       | set `image_vars.OPENCODE_MAJOR` to `"1"`, or remove the `RUN` block and the two entrypoint calls |
+| Different preset    | edit `oh-my-opencode-slim.json` (image default or S3 copy)                                       |
+| Disable, no rebuild | put `"-oh-my-opencode-slim"` in the `plugins` array and reload                                   |
 
-Removing the plugin path from `opencode.json` by hand is not enough on its own:
-`register_plugin` re-adds it on the next boot while the bundle is present.
+Deleting the plugin path from `opencode.json` is not enough: `register_plugin`
+re-adds it on the next boot while the bundle is present. The `-` prefixed entry
+is respected instead — `register_plugin` sees it and leaves the array alone.
+
+## Model presets
+
+The bundled file contains two presets; `preset` selects the active one.
+
+| preset                  | orchestrator                  | oracle                      | explorer                          | designer                     | fixer                       | observer                      |
+| ----------------------- | ----------------------------- | --------------------------- | --------------------------------- | ---------------------------- | --------------------------- | ----------------------------- |
+| `opencode-go` (default) | `opencode/gpt-6.1-sol` (high) | `opencode-go/glm-5.3`       | `opencode-go/deepseek-v4.1-flash` | `opencode/gemini-3.8-flash`  | `opencode-go/mimo-v2.6-pro` | `opencode-go/mimo-v2.6-flash` |
+| `openai`                | `openai/gpt-6-sol` (high)     | `openai/gpt-6-astra` (high) | `openai/gpt-6-luna` (low)         | `openai/gpt-6-luna` (medium) | `openai/gpt-6-luna` (high)  | `openai/gpt-6-luna` (low)     |
+
+Without a `preset`, every agent follows the session model: usable, but it gives
+up the cost split between a strong orchestrator and cheap workers.
+
+Roles, if you replace the preset:
+
+| Agent          | Needs                                 | Usual tier             |
+| -------------- | ------------------------------------- | ---------------------- |
+| `orchestrator` | long context, reliable tool calls     | strong, high effort    |
+| `oracle`       | strongest reasoning, read-only        | strongest, high effort |
+| `explorer`     | fast, cheap, read-only search         | cheap, low effort      |
+| `designer`     | **image input** (screenshots)         | mid, medium effort     |
+| `fixer`        | multi-file edits                      | mid, high effort       |
+| `observer`     | multimodal, disabled when unreachable | cheap vision model     |
+
+### Confirm model IDs before saving
+
+`model` is not validated: a wrong ID fails at subagent creation instead of
+degrading. Read the catalog from inside the container:
+
+```bash
+curl -s -u "opencode:__PW__" http://127.0.0.1:2633/api/model \
+| python3 -c 'import json,sys
+for m in json.load(sys.stdin)["data"]:
+    v = ",".join(x["id"] for x in (m.get("variants") or []))
+    print(m["providerID"] + "/" + m["modelID"] + ("  #" + v if v else ""))'
+```
+
+`__PW__` is the container API password (`OPENCODE_PASSWORD`, or `SERVER_PASSWORD`
+when that is unset). Variants are model specific: only use values printed after
+`#`, and omit `variant` when unsure, an unknown one is a model-resolution error.
+
+### Apply and verify
+
+1. Edit `/root/s3/.opencode/config/opencode/oh-my-opencode-slim.json` (or the
+   project-level `.opencode/oh-my-opencode-slim.jsonc`, which wins).
+2. Validate: `python3 -m json.tool <file> >/dev/null && echo OK`.
+3. Reload: `curl -s -X POST -u "opencode:__PW__" http://127.0.0.1:2633/api/location/reload`.
+4. Confirm what each agent resolved to:
+
+```bash
+curl -s -u "opencode:__PW__" http://127.0.0.1:2633/api/agent \
+| python3 -c 'import json,sys
+for a in json.load(sys.stdin)["data"]:
+    m = a.get("model") or {}
+    print(a["id"], "->", m.get("providerID","?") + "/" + m.get("id","?"), m.get("variant",""))'
+```
+
+Agent registration does not re-run on a file change alone, and FUSE edits may not
+fire the watcher, so always reload before inspecting `/api/agent`.
+
+## Rollback
+
+Remove `preset` (and `presets` if you like), then reload: new sessions fall back
+to the session model. No container restart or image rebuild is needed.
+
+For the whole feature, set `image_vars.OPENCODE_MAJOR` to `"1"` (v1 has no
+bundle), or keep v2 and disable just this plugin with the `-` entry above.
+
+## Troubleshooting
+
+| Symptom                                  | Cause                                                          | Fix                                                                                                         |
+| ---------------------------------------- | -------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| `orchestrator` missing from `/api/agent` | plugin not loaded                                              | check the boot log for `Registered OpenCode plugin`, and that `/opt/opencode-plugins.tar.zst` was extracted |
+| `Cannot find module 'jsdom'`             | optional dependencies were omitted from the bundle             | rebuild without `--omit=optional`; the shipped bundle keeps them                                            |
+| `sg: group 'run' does not exist`         | `ast_grep_*` fell back to `/usr/bin/sg`                        | ensure `@ast-grep/cli` is in the bundle (it is, in the default build)                                       |
+| `PresetResolutionError`                  | `preset` name or `extends` target missing                      | align the names                                                                                             |
+| `Model unavailable: provider/model`      | provider not connected, or an ID typo                          | re-list models and re-check the ID                                                                          |
+| Model-resolution error naming a variant  | the model does not offer it                                    | remove `variant`                                                                                            |
+| Agents still show the old model          | the session is bound to an old snapshot                        | create a new session, or reload                                                                             |
+| Edits have no effect                     | wrong file (edited `/opt/config-init` or `~/.config/opencode`) | edit `/root/s3/.opencode/config/opencode/oh-my-opencode-slim.json`                                          |
 
 ## Verification
 
