@@ -58,8 +58,8 @@ COPY config /opt/config-init
 COPY docker/opencode-plugins /opt/opencode-plugins-src
 
 # Bundle the orchestration plugin as a tarball, v2 only. Installing it into the
-# image as-is would cost ~200 MB; the tarball is ~40 MB and the entrypoint
-# extracts it to the instance's ephemeral disk (~1.8 s) on every boot.
+# image as-is would cost ~229 MB; the zstd archive is ~25 MB and the entrypoint
+# extracts it to the instance's ephemeral disk (~0.4 s) on every boot.
 # optionalDependencies stay installed on purpose: omitting them drops jsdom
 # (webfetch on HTML pages) and @ast-grep/cli (ast_grep_* tools).
 RUN --mount=type=cache,target=/root/.npm,sharing=locked \
