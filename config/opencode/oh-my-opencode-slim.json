@@ -1,0 +1,69 @@
+{
+  "$schema": "https://unpkg.com/oh-my-opencode-slim@latest/oh-my-opencode-slim.schema.json",
+  "autoUpdate": false,
+  "tui": false,
+  "sidebar": false,
+  "preset": "opencode-go",
+  "presets": {
+    "openai": {
+      "orchestrator": {
+        "model": "openai/gpt-6-sol",
+        "variant": "high",
+        "skills": ["*"]
+      },
+      "oracle": {
+        "model": "openai/gpt-6-astra",
+        "variant": "high",
+        "skills": ["simplify"]
+      },
+      "explorer": {
+        "model": "openai/gpt-6-luna",
+        "variant": "low",
+        "skills": []
+      },
+      "designer": {
+        "model": "openai/gpt-6-luna",
+        "variant": "medium",
+        "skills": []
+      },
+      "fixer": {
+        "model": "openai/gpt-6-luna",
+        "variant": "high",
+        "skills": []
+      },
+      "observer": {
+        "model": "openai/gpt-6-luna",
+        "variant": "low",
+        "skills": []
+      }
+    },
+    "opencode-go": {
+      "orchestrator": {
+        "model": "opencode/gpt-6.1-sol",
+        "variant": "high",
+        "skills": ["*"]
+      },
+      "oracle": {
+        "model": "opencode-go/glm-5.3",
+        "skills": ["simplify"]
+      },
+      "explorer": {
+        "model": "opencode-go/deepseek-v4.1-flash",
+        "skills": []
+      },
+      "designer": {
+        "model": "opencode/gemini-3.8-flash",
+        "skills": []
+      },
+      "fixer": {
+        "model": "opencode-go/mimo-v2.6-pro",
+        "skills": []
+      },
+      "observer": {
+        "model": "opencode-go/mimo-v2.6-flash",
+        "skills": []
+      }
+    }
+  },
+  "disabled_agents": []
+}
