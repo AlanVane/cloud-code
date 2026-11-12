@@ -10,7 +10,7 @@ orchestrator，负责规划任务、在子会话里调度专职 agent（`oracle`
 
 ```text
 构建期
-  /opt/opencode-plugins.tgz            38 MB   压缩包，仅 v2
+  /opt/opencode-plugins.tar.zst        25 MB   zstd 压缩包，仅 v2
     └── node_modules/oh-my-opencode-slim        10 MB
     └── node_modules/…                         保留了 optional 依赖（见下）
 
@@ -18,9 +18,9 @@ orchestrator，负责规划任务、在子会话里调度专职 agent（`oracle`
   /opt/opencode-plugins/                229 MB  解压到实例磁盘
 ```
 
-之所以是 38 MB 而不是 229 MB：Cloudflare 容器**每次启动都会从镜像重建磁盘**，把展开的目录
-放进镜像只会让镜像白白变大。解压实测 **1.8 秒**，落在实例本地盘，因此插件不占用 FUSE
-挂载的 S3 工作区。
+之所以是 25 MB 而不是 229 MB：Cloudflare 容器**每次启动都会从镜像重建磁盘**，把展开的目录
+放进镜像只会让镜像白白变大。解压实测 **约 0.4 秒**（`zstd -dc | tar -xf`），落在实例本地盘，因此插件不占用
+FUSE 挂载的 S3 工作区。镜像里因此安装了 `zstd`；用 gzip 时实测 1.0 秒、归档 38 MB。
 
 `optionalDependencies` 是特意保留的：去掉它们会丢失 `jsdom`（`webfetch` 处理 HTML 会
 失败）和 `@ast-grep/cli`（`ast_grep_*` 工具会失效）。

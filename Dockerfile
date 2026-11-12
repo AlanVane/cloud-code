@@ -27,7 +27,8 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
     apt-get install -y --no-install-recommends \
       fuse \
       ca-certificates \
-      curl; \
+      curl \
+      zstd; \
     \
     curl -fsSL "https://github.com/tigrisdata/tigrisfs/releases/download/v${TIGRISFS_VERSION}/tigrisfs_${TIGRISFS_VERSION}_linux_amd64.deb" -o /tmp/tigrisfs.deb; \
     dpkg -i /tmp/tigrisfs.deb; \
@@ -57,8 +58,8 @@ COPY config /opt/config-init
 COPY docker/opencode-plugins /opt/opencode-plugins-src
 
 # Bundle the orchestration plugin as a tarball, v2 only. Installing it into the
-# image as-is would cost ~200 MB; the tarball is ~40 MB and the entrypoint
-# extracts it to the instance's ephemeral disk (~1.8 s) on every boot.
+# image as-is would cost ~229 MB; the zstd archive is ~25 MB and the entrypoint
+# extracts it to the instance's ephemeral disk (~0.4 s) on every boot.
 # optionalDependencies stay installed on purpose: omitting them drops jsdom
 # (webfetch on HTML pages) and @ast-grep/cli (ast_grep_* tools).
 RUN --mount=type=cache,target=/root/.npm,sharing=locked \
@@ -66,7 +67,7 @@ RUN --mount=type=cache,target=/root/.npm,sharing=locked \
       set -eux; \
       cd /opt/opencode-plugins-src; \
       npm ci --omit=dev --no-audit --no-fund; \
-      tar -czf /opt/opencode-plugins.tgz node_modules; \
+      tar -cf - node_modules | zstd -19 -T0 -q -o /opt/opencode-plugins.tar.zst; \
       cd /; \
       rm -rf /opt/opencode-plugins-src/node_modules; \
     fi
@@ -83,7 +84,7 @@ GLOBAL_CONFIG_DIR="$XDG_DIR/config/opencode"
 CONFIG_INIT_DIR="/opt/config-init/opencode"
 
 # Bundled orchestration plugin (v2 images only).
-PLUGIN_TGZ="/opt/opencode-plugins.tgz"
+PLUGIN_ARCHIVE="/opt/opencode-plugins.tar.zst"
 PLUGIN_HOME="/opt/opencode-plugins"
 PLUGIN_ENTRY="$PLUGIN_HOME/node_modules/oh-my-opencode-slim"
 
@@ -107,10 +108,10 @@ setup_workspace() {
 # has to be unpacked again each time. ~49 MB tarball in, ~300 MB on the
 # instance-local disk, measured at ~1.8 s.
 extract_plugins() {
-    [ -f "$PLUGIN_TGZ" ] || return 0
+    [ -f "$PLUGIN_ARCHIVE" ] || return 0
     rm -rf "$PLUGIN_HOME"
     mkdir -p "$PLUGIN_HOME"
-    tar -xzf "$PLUGIN_TGZ" -C "$PLUGIN_HOME"
+    zstd -dc "$PLUGIN_ARCHIVE" | tar -xf - -C "$PLUGIN_HOME"
     echo "[INFO] Extracted OpenCode plugin bundle"
 }
 
