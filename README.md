@@ -127,7 +127,10 @@ container and authenticates its own `/api/*` requests with it.
 > safely reusable by v2.
 
 See [docs/opencode-v2-migration.md](docs/opencode-v2-migration.md) for the measured
-v1/v2 differences and validation notes.
+v1/v2 differences and validation notes. v2 images also bundle the
+`oh-my-opencode-slim` orchestration plugin; see
+[docs/oh-my-opencode-slim.md](docs/oh-my-opencode-slim.md) for what it adds, how it
+is packaged and how to change the preset.
 
 ## 💾 Data Persistence (S3/R2)
 

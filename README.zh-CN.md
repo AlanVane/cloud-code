@@ -123,6 +123,8 @@ OpenCode v2 需要容器已知密码：优先使用 `OPENCODE_PASSWORD`，未设
 > Bucket），不要复用已有的 v1 数据目录。
 
 详细的 v1/v2 差异与验证记录见 [docs/opencode-v2-migration.zh-CN.md](docs/opencode-v2-migration.zh-CN.md)。
+v2 镜像还会内置 `oh-my-opencode-slim` 编排插件，它的作用、打包方式与预设修改见
+[docs/oh-my-opencode-slim.zh-CN.md](docs/oh-my-opencode-slim.zh-CN.md)。
 
 ## 💾 数据持久化 (S3/R2)
 

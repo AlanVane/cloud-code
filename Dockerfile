@@ -10,6 +10,9 @@ ARG OPENCODE_MAJOR=1
 # Pinned release per major; each installer refuses to install the other major.
 ARG OPENCODE_VERSION_V1=1.19.5
 ARG OPENCODE_VERSION_V2=2.2.5
+# Orchestration plugin bundled for v2 images. Installed at build time, shipped as
+# a tarball, and extracted to the instance-local disk at boot (see entrypoint).
+ARG OMS_VERSION=3.0.7
 
 # Install system dependencies + tigrisfs/cloudflared/opencode, then clean cache
 RUN set -eux; \
@@ -50,6 +53,22 @@ RUN set -eux; \
 # Copy preset config
 COPY config /opt/config-init
 
+# Bundle the orchestration plugin as a tarball, v2 only. Installing it into the
+# image as-is would cost ~300 MB; the tarball is ~49 MB and the entrypoint
+# extracts it to the instance's ephemeral disk (~1.8 s) on every boot.
+# optionalDependencies stay installed on purpose: omitting them drops jsdom
+# (webfetch on HTML pages) and @ast-grep/cli (ast_grep_* tools).
+RUN if [ "${OPENCODE_MAJOR}" = "2" ]; then \
+      set -eux; \
+      mkdir -p /opt/opencode-plugins-src; \
+      cd /opt/opencode-plugins-src; \
+      npm init -y >/dev/null; \
+      npm install --omit=dev --no-audit --no-fund "oh-my-opencode-slim@${OMS_VERSION}"; \
+      tar -czf /opt/opencode-plugins.tgz node_modules; \
+      cd /; \
+      rm -rf /opt/opencode-plugins-src /root/.npm; \
+    fi
+
 # Create startup script
 RUN install -m 755 /dev/stdin /entrypoint.sh <<'EOF'
 #!/bin/bash
@@ -61,6 +80,11 @@ XDG_DIR="$MOUNT_POINT/.opencode"
 GLOBAL_CONFIG_DIR="$XDG_DIR/config/opencode"
 CONFIG_INIT_DIR="/opt/config-init/opencode"
 
+# Bundled orchestration plugin (v2 images only).
+PLUGIN_TGZ="/opt/opencode-plugins.tgz"
+PLUGIN_HOME="/opt/opencode-plugins"
+PLUGIN_ENTRY="$PLUGIN_HOME/node_modules/oh-my-opencode-slim"
+
 # Initialize workspace and XDG environment variables
 setup_workspace() {
     mkdir -p "$WORKSPACE_DIR/project" "$GLOBAL_CONFIG_DIR" "$XDG_DIR"/{data,state}
@@ -70,11 +94,52 @@ setup_workspace() {
     PROJECT_DIR="$WORKSPACE_DIR/project"
 
     # Copy config files only if they not exist
-    for file in opencode.json AGENTS.md; do
+    for file in opencode.json AGENTS.md oh-my-opencode-slim.json; do
         if [ ! -f "$GLOBAL_CONFIG_DIR/$file" ]; then
             cp "$CONFIG_INIT_DIR/$file" "$GLOBAL_CONFIG_DIR/" 2>/dev/null && echo "[INFO] Initialized $file" || true
         fi
     done
+}
+
+# Cloudflare containers start from the image on every wake, so the plugin bundle
+# has to be unpacked again each time. ~49 MB tarball in, ~300 MB on the
+# instance-local disk, measured at ~1.8 s.
+extract_plugins() {
+    [ -f "$PLUGIN_TGZ" ] || return 0
+    rm -rf "$PLUGIN_HOME"
+    mkdir -p "$PLUGIN_HOME"
+    tar -xzf "$PLUGIN_TGZ" -C "$PLUGIN_HOME"
+    echo "[INFO] Extracted OpenCode plugin bundle"
+}
+
+# Merge the plugin path into the `plugins` array, keeping entries the user added.
+# A config that cannot be parsed is left untouched rather than overwritten.
+register_plugin() {
+    [ -d "$PLUGIN_ENTRY" ] || return 0
+
+    node - "$GLOBAL_CONFIG_DIR/opencode.json" "$PLUGIN_ENTRY" <<'JS'
+const fs = require('node:fs')
+
+const [file, entry] = process.argv.slice(2)
+let config = {}
+
+if (fs.existsSync(file)) {
+    try {
+        config = JSON.parse(fs.readFileSync(file, 'utf8'))
+    } catch {
+        console.error(`[WARN] ${file} is not valid JSON, leaving it untouched`)
+        process.exit(0)
+    }
+}
+
+const plugins = Array.isArray(config.plugins) ? config.plugins : []
+if (plugins.includes(entry)) process.exit(0)
+
+plugins.push(entry)
+config.plugins = plugins
+fs.writeFileSync(file, `${JSON.stringify(config, null, 2)}\n`)
+console.log('[INFO] Registered OpenCode plugin')
+JS
 }
 
 # Ensure mount point is a clean directory
@@ -107,6 +172,8 @@ else
 fi
 
 setup_workspace
+extract_plugins
+register_plugin
 
 cleanup() {
     echo "[INFO] Shutting down..."
