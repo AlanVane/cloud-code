@@ -118,3 +118,10 @@
 1. 将 `wrangler.jsonc` 中的 `containers[0].image_vars.OPENCODE_MAJOR` 改回 `"1"`。
 2. 将 `S3_PREFIX` 指回 v1 的数据前缀（或全新的空前缀）——不要把跑过 v2 的目录挂给 v1。
 3. 重新构建并部署。代码库未删除任何 v1 兼容路径。
+
+## 相关文档
+
+- [用 Cloudflare Access 保护 Worker](cloudflare-access.zh-CN.md)
+- [容器中的 OpenCode 编排插件](oh-my-opencode-slim.zh-CN.md)
+- [本地端到端验证](local-e2e.zh-CN.md)
+- [部署到 Cloudflare](deployment.zh-CN.md)
