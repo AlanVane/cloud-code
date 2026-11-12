@@ -165,3 +165,7 @@ dist
 .env*
 !.env.example
 .wrangler/
+
+# The container plugin bundle is npm-based; keep its lockfile even if a global
+# ignore rule excludes package-lock.json.
+!docker/opencode-plugins/package-lock.json

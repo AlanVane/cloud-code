@@ -10,12 +10,13 @@ ARG OPENCODE_MAJOR=1
 # Pinned release per major; each installer refuses to install the other major.
 ARG OPENCODE_VERSION_V1=1.19.5
 ARG OPENCODE_VERSION_V2=2.2.5
-# Orchestration plugin bundled for v2 images. Installed at build time, shipped as
-# a tarball, and extracted to the instance-local disk at boot (see entrypoint).
-ARG OMS_VERSION=3.0.7
 
 # Install system dependencies + tigrisfs/cloudflared/opencode, then clean cache
-RUN set -eux; \
+# The apt caches are BuildKit mounts: they speed up rebuilds and never land in a
+# layer, so there is nothing to clean up afterwards.
+RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
+    --mount=type=cache,target=/var/lib/apt/lists,sharing=locked \
+    set -eux; \
     # Debian defaults to http:// mirrors. Networks that only allow egress on
     # 443 fail that first update, so retry once over https:// instead of
     # forcing one scheme for every host.
@@ -46,27 +47,28 @@ RUN set -eux; \
     curl -fsSL "${OPENCODE_INSTALL_URL}" | bash -s -- --no-modify-path --version "${OPENCODE_INSTALL_VERSION}"; \
     mv /root/.opencode/bin/opencode /usr/local/bin/opencode; \
     rm -rf /root/.opencode; \
-    opencode --version; \
-    \
-    rm -rf /var/lib/apt/lists/* /var/cache/apt/archives/*
+    opencode --version
 
 # Copy preset config
 COPY config /opt/config-init
 
+# Plugin manifest and lockfile. `npm ci` pins transitive versions, so a rebuild
+# cannot pull a different `effect` beta or ast-grep release.
+COPY docker/opencode-plugins /opt/opencode-plugins-src
+
 # Bundle the orchestration plugin as a tarball, v2 only. Installing it into the
-# image as-is would cost ~300 MB; the tarball is ~49 MB and the entrypoint
+# image as-is would cost ~200 MB; the tarball is ~40 MB and the entrypoint
 # extracts it to the instance's ephemeral disk (~1.8 s) on every boot.
 # optionalDependencies stay installed on purpose: omitting them drops jsdom
 # (webfetch on HTML pages) and @ast-grep/cli (ast_grep_* tools).
-RUN if [ "${OPENCODE_MAJOR}" = "2" ]; then \
+RUN --mount=type=cache,target=/root/.npm,sharing=locked \
+    if [ "${OPENCODE_MAJOR}" = "2" ]; then \
       set -eux; \
-      mkdir -p /opt/opencode-plugins-src; \
       cd /opt/opencode-plugins-src; \
-      npm init -y >/dev/null; \
-      npm install --omit=dev --no-audit --no-fund "oh-my-opencode-slim@${OMS_VERSION}"; \
+      npm ci --omit=dev --no-audit --no-fund; \
       tar -czf /opt/opencode-plugins.tgz node_modules; \
       cd /; \
-      rm -rf /opt/opencode-plugins-src /root/.npm; \
+      rm -rf /opt/opencode-plugins-src/node_modules; \
     fi
 
 # Create startup script
