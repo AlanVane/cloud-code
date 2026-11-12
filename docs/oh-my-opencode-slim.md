@@ -11,15 +11,15 @@ v1 images are untouched.
 
 ```text
 build time
-  /opt/opencode-plugins.tgz            49 MB   compressed bundle, v2 only
+  /opt/opencode-plugins.tgz            38 MB   compressed bundle, v2 only
     └── node_modules/oh-my-opencode-slim        10 MB
     └── node_modules/…                          optional deps kept (see below)
 
 boot time (every start)
-  /opt/opencode-plugins/                300 MB  extracted to the instance disk
+  /opt/opencode-plugins/                229 MB  extracted to the instance disk
 ```
 
-The tarball is ~49 MB instead of ~300 MB because Cloudflare containers rebuild
+The tarball is ~38 MB instead of ~229 MB because Cloudflare containers rebuild
 their disk from the image on every start, so shipping the expanded tree would
 only pad the image. Extraction is measured at **1.8 s** on the instance-local
 disk, which keeps the plugin off the FUSE-mounted S3 workspace.
@@ -86,7 +86,7 @@ container, and `scripts/sync-dev-secrets.mjs` uploads that key with
 
 | Goal             | Action                                                                                           |
 | ---------------- | ------------------------------------------------------------------------------------------------ |
-| Bump the plugin  | change `ARG OMS_VERSION` in `Dockerfile`, rebuild, redeploy                                      |
+| Bump the plugin  | edit `docker/opencode-plugins/package.json`, regenerate `package-lock.json`, rebuild             |
 | Drop it again    | set `image_vars.OPENCODE_MAJOR` to `"1"`, or remove the `RUN` block and the two entrypoint calls |
 | Different preset | edit `oh-my-opencode-slim.json` (image default or S3 copy)                                       |
 
@@ -97,7 +97,7 @@ Removing the plugin path from `opencode.json` by hand is not enough on its own:
 
 ```text
 payload            extract   disk    jsdom   @ast-grep/cli
-full (default)     1.8 s     300 MB  ok      ok
+full (default)     1.4–1.8 s 229 MB  ok      ok
 --omit=optional    0.8 s      95 MB  missing missing
 ```
 

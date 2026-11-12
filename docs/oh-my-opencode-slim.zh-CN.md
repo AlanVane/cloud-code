@@ -10,15 +10,15 @@ orchestrator，负责规划任务、在子会话里调度专职 agent（`oracle`
 
 ```text
 构建期
-  /opt/opencode-plugins.tgz            49 MB   压缩包，仅 v2
+  /opt/opencode-plugins.tgz            38 MB   压缩包，仅 v2
     └── node_modules/oh-my-opencode-slim        10 MB
     └── node_modules/…                         保留了 optional 依赖（见下）
 
 运行期（每次启动）
-  /opt/opencode-plugins/                300 MB  解压到实例磁盘
+  /opt/opencode-plugins/                229 MB  解压到实例磁盘
 ```
 
-之所以是 49 MB 而不是 300 MB：Cloudflare 容器**每次启动都会从镜像重建磁盘**，把展开的目录
+之所以是 38 MB 而不是 229 MB：Cloudflare 容器**每次启动都会从镜像重建磁盘**，把展开的目录
 放进镜像只会让镜像白白变大。解压实测 **1.8 秒**，落在实例本地盘，因此插件不占用 FUSE
 挂载的 S3 工作区。
 
@@ -77,7 +77,7 @@ OpenCode 2.2.5 + 插件 3.0.7 上验证：项目文件把 `orchestrator` 设为 
 
 | 目标     | 做法                                                                                 |
 | -------- | ------------------------------------------------------------------------------------ |
-| 升级插件 | 改 `Dockerfile` 里的 `ARG OMS_VERSION`，重新构建并部署                               |
+| 升级插件 | 改 `docker/opencode-plugins/package.json`，重新生成 `package-lock.json`，重新构建    |
 | 去掉插件 | 把 `image_vars.OPENCODE_MAJOR` 改成 `"1"`，或删除那段 `RUN` 与 entrypoint 的两个调用 |
 | 换预设   | 编辑 `oh-my-opencode-slim.json`（镜像默认值或 S3 上的副本）                          |
 
@@ -88,7 +88,7 @@ OpenCode 2.2.5 + 插件 3.0.7 上验证：项目文件把 `orchestrator` 设为 
 
 ```text
 载荷              解压    磁盘     jsdom   @ast-grep/cli
-full（默认）      1.8 s   300 MB   ok      ok
+full（默认）      1.4–1.8 s 229 MB  ok      ok
 --omit=optional   0.8 s    95 MB   缺失    缺失
 ```
 
