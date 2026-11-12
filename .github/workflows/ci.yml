@@ -75,5 +75,17 @@ jobs:
       # Reads image_vars.OPENCODE_MAJOR from wrangler.jsonc (currently "2"),
       # builds the image and validates the Wrangler config. Needs no Cloudflare
       # credentials.
+      - name: Build image (v2) and assert the plugin bundle
+        run: |
+          docker build --build-arg OPENCODE_MAJOR=2 -t cloud-code:ci-v2 .
+          docker run --rm --entrypoint sh cloud-code:ci-v2 -c '
+            set -e
+            tar -xzf /opt/opencode-plugins.tgz -C /tmp
+            for pkg in node_modules/oh-my-opencode-slim node_modules/jsdom node_modules/@ast-grep/cli; do
+              test -e "/tmp/$pkg" || { echo "::error::missing $pkg in the plugin bundle"; exit 1; }
+            done
+            echo "plugin bundle: $(du -sh /tmp/node_modules | cut -f1), entries: $(ls /tmp/node_modules | wc -l)"
+          '
+
       - name: Wrangler dry-run deploy
         run: pnpm exec wrangler deploy --dry-run --outdir /tmp/dry-run
