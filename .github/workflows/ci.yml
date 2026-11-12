@@ -85,6 +85,7 @@ jobs:
               test -e "/tmp/$pkg" || { echo "::error::missing $pkg in the plugin bundle"; exit 1; }
             done
             echo "plugin bundle: $(du -sh /tmp/node_modules | cut -f1), entries: $(ls /tmp/node_modules | wc -l)"
+            echo "tarball: $(du -h /opt/opencode-plugins.tgz | cut -f1)"
           '
 
       - name: Wrangler dry-run deploy

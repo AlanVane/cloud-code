@@ -1,0 +1,8 @@
+{
+  "name": "opencode-plugins",
+  "private": true,
+  "description": "Bundled OpenCode plugins for the container image (installed with npm ci).",
+  "dependencies": {
+    "oh-my-opencode-slim": "3.0.7"
+  }
+}
