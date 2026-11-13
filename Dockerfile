@@ -1,4 +1,4 @@
-FROM nikolaik/python-nodejs:python3.12-nodejs22-bookworm
+FROM nikolaik/python-nodejs:python3.15-nodejs26
 
 ENV NODE_ENV=production
 
@@ -183,15 +183,31 @@ extract_plugins
 register_plugin
 
 cleanup() {
+    # Ignore further TERM/INT so cleanup never runs twice or dies mid-tail.
+    trap '' SIGTERM SIGINT
     echo "[INFO] Shutting down..."
+    local status=0
     if [ -n "$OPENCODE_PID" ]; then
-        kill -TERM "$OPENCODE_PID" 2>/dev/null
-        wait "$OPENCODE_PID" 2>/dev/null
+        kill -TERM "$OPENCODE_PID" 2>/dev/null || true
+        wait "$OPENCODE_PID" 2>/dev/null || status=$?
     fi
+    # Normalize clean/signal-initiated stops; preserve other child failures.
+    case "$status" in
+        0 | 130 | 143) status=0 ;;
+    esac
     if mountpoint -q "$MOUNT_POINT" 2>/dev/null; then
-        fusermount -u "$MOUNT_POINT" 2>/dev/null || true
+        local unmount_status=0
+        fusermount -u "$MOUNT_POINT" 2>/dev/null || unmount_status=$?
+        if [ "$status" -eq 0 ] && [ "$unmount_status" -ne 0 ]; then
+            status=$unmount_status
+        fi
     fi
-    exit 0
+    if [ "$status" -eq 0 ]; then
+        echo "[INFO] Cleanup complete (status 0)"
+    else
+        echo "[ERROR] Cleanup complete (status $status)"
+    fi
+    exit "$status"
 }
 trap cleanup SIGTERM SIGINT
 
