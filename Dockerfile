@@ -1,4 +1,4 @@
-FROM nikolaik/python-nodejs:python3.12-nodejs22-bookworm
+FROM nikolaik/python-nodejs:python3.12-nodejs24-bookworm
 
 ENV NODE_ENV=production
 
