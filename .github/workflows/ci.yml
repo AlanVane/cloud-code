@@ -20,6 +20,10 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      # Shell syntax gate for the container entrypoint; needs no dependencies.
+      - name: Entrypoint shell syntax
+        run: bash -n docker/entrypoint.sh
+
       # Reads packageManager from package.json (pnpm@12.18.0).
       - uses: pnpm/action-setup@v6
 
