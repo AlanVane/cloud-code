@@ -468,18 +468,17 @@ async function smokeContainer() {
       }
       if (check(Boolean(state), 'container state inspectable after stop')) {
         check(state.Running === false, 'container no longer running after stop')
+        check(state.OOMKilled !== true, 'container exited without OOM')
         check(
-          state.OOMKilled !== true && state.ExitCode !== 137,
-          'container exited without OOM/137',
+          state.ExitCode === 0,
+          `container graceful-stop exit code is 0 (got ${state.ExitCode}, docker error: ${state.Error || 'none'})`,
         )
-        if (state.ExitCode !== 0) {
-          info(`container exit code ${state.ExitCode} (docker error: ${state.Error || 'none'})`)
-        }
       }
       const finalLogs = dockerLogs(name)
+      check(finalLogs.includes('[INFO] Shutting down...'), 'entrypoint cleanup started on stop')
       check(
-        finalLogs.includes('[INFO] Shutting down...'),
-        'entrypoint cleanup log observed on stop',
+        finalLogs.includes('Cleanup complete'),
+        'entrypoint cleanup end marker observed (tail completed)',
       )
       saveLog('container.log', finalLogs)
     } else {
