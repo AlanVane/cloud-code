@@ -74,6 +74,7 @@ RUN --mount=type=cache,target=/root/.npm,sharing=locked \
 
 # Create startup script
 COPY --chmod=755 docker/entrypoint.sh /entrypoint.sh
+COPY docker/registerPlugin.cjs /opt/registerPlugin.cjs
 
 WORKDIR /root/s3/workspace
 EXPOSE 2633

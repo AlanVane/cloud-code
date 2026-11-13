@@ -32,6 +32,11 @@ jobs:
           node-version: 22
           cache: pnpm
 
+      - name: Register helper syntax and tests
+        run: |
+          node --check docker/registerPlugin.cjs
+          node --test docker/registerPlugin.test.cjs
+
       - name: Install
         run: pnpm install --frozen-lockfile
 
