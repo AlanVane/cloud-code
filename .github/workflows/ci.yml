@@ -71,8 +71,8 @@ jobs:
             got=$(node --version)
             echo "Node.js $got"
             case "$got" in
-              v24.*) ;;
-              *) echo "::error::expected Node.js 24, got $got"; exit 1 ;;
+              v26.*) ;;
+              *) echo "::error::expected Node.js 26, got $got"; exit 1 ;;
             esac
           '
 
