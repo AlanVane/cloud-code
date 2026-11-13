@@ -101,5 +101,26 @@ jobs:
             echo "archive: $(du -h /opt/opencode-plugins.tar.zst | cut -f1)"
           '
 
+      # Startup smoke against the image built above, then the same checks
+      # through wrangler dev (Worker -> DO -> container). Dummy passwords only,
+      # no model calls; logs land under $RUNNER_TEMP and are echoed to the job
+      # log on failure. Bounded so the 25 minute job budget still fits.
+      - name: Runtime smoke (container and Worker)
+        timeout-minutes: 10
+        run: |
+          set -euo pipefail
+          # wrangler dev's egress interceptor needs xt_socket on some runner
+          # kernels. A built-in module passes the modprobe no-op; CI runners
+          # only, never applied to developer hosts.
+          lsmod | grep -q '^xt_socket' || sudo modprobe xt_socket || {
+            echo '::error::xt_socket unavailable and modprobe failed; wrangler dev cannot start its egress interceptor'
+            exit 1
+          }
+          docker info >/dev/null || {
+            echo '::error::docker daemon not reachable on this runner'
+            exit 1
+          }
+          node scripts/runtimeSmoke.mjs
+
       - name: Wrangler dry-run deploy
         run: pnpm exec wrangler deploy --dry-run --outdir /tmp/dry-run
