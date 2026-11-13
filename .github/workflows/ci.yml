@@ -63,10 +63,14 @@ jobs:
       - name: Build image (v1 default)
         run: docker build -t cloud-code:ci-v1 .
 
-      - name: Assert Python and Node.js runtimes
+      - name: Assert Debian, Python and Node.js runtimes
         run: |
           docker run --rm --entrypoint sh cloud-code:ci-v1 -c '
             set -e
+            . /etc/os-release
+            echo "OS: $PRETTY_NAME"
+            test "$ID" = debian
+            test "$VERSION_ID" = 13
             python -c "import ssl, sqlite3, sys; print(sys.version); assert sys.version_info[:2] == (3, 15); assert sys.version_info.releaselevel == \"final\""
             got=$(node --version)
             echo "Node.js $got"
