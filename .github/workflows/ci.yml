@@ -63,6 +63,19 @@ jobs:
       - name: Build image (v1 default)
         run: docker build -t cloud-code:ci-v1 .
 
+      - name: Assert Python and Node.js runtimes
+        run: |
+          docker run --rm --entrypoint sh cloud-code:ci-v1 -c '
+            set -e
+            python -c "import ssl, sqlite3, sys; print(sys.version); assert sys.version_info[:2] == (3, 15); assert sys.version_info.releaselevel == \"final\""
+            got=$(node --version)
+            echo "Node.js $got"
+            case "$got" in
+              v24.*) ;;
+              *) echo "::error::expected Node.js 24, got $got"; exit 1 ;;
+            esac
+          '
+
       - name: Assert v1 is installed
         run: |
           got=$(docker run --rm --entrypoint opencode cloud-code:ci-v1 --version)
